@@ -34,17 +34,18 @@ const getDBInstanceByConnection = async(sequelize) => {
 
 const getDBConnection = async () => {
     try {
-        const sequelize = new Sequelize(
-            config.DATABASE,
-            config.DATABASE_USER,
-            config.DATABASE_PASSWORD,
-            {
-                dialect: 'postgres',
-                host: config.DATABASE_HOST,
-                port: config.POST,
-                logging: false
-            },
-        );
+        // const sequelize = new Sequelize(
+        //     config.DATABASE,
+        //     config.DATABASE_USER,
+        //     config.DATABASE_PASSWORD,
+        //     {
+        //         dialect: 'postgres',
+        //         host: config.DATABASE_HOST,
+        //         port: config.POST,
+        //         logging: false
+        //     },
+        // );
+        const sequelize = new Sequelize(process.env.DATABASE_URL);
         sequelize
             .authenticate()   // simple promise that tells wheather connection true of not   
             .then(() => {
