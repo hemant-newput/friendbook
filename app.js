@@ -38,8 +38,12 @@ app.use((req, res, next) => {
 });
 
 app.get('/db', (req, res) => {
-  dbUtil.seeder();
+   dbUtil.seeder();
   res.send("TABLES ARE CREATED")
+})
+app.get('/destroy', (req, res) => {
+   dbUtil.deleter()
+  res.send("TABLES ARE DELETED")
 })
 
 app.get('/token', (req, res) => {

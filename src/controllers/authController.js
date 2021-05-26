@@ -1,4 +1,5 @@
 const authService = require('../services/authService');
+const { postTable, dbConnector, getDBConnection } = require('../utils/dbUtil');
 const homeController = {
 
     validateLogin: async (req, res) => {
@@ -25,6 +26,14 @@ const homeController = {
         }
         const response = await authService.signUp(queryData)
         res.send(response)
-    }
+    },
+    test: async (req, res) => {
+       try {
+           const postGenie = await postTable();
+        res.send( await  postGenie.findAll({}))
+       } catch (error) {
+           console.log(error)
+       }
+    },
 }
 module.exports = homeController;

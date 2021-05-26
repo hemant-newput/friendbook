@@ -6,7 +6,7 @@ require("dotenv").config();
 const homeService = {
   addPost: async function validateLogin(postData) {
     try {
-      const postGenie = await (await dbUtil.getDBConnection()).postTable;
+      const postGenie = await dbUtil.postTable();
       const postAddedData = await postGenie.create({
         caption: postData.caption,
         description: postData.message,
@@ -28,7 +28,7 @@ const homeService = {
   },
 
   updateUserData: async function (queryData) {
-    const userGenie = await (await dbUtil.getDBConnection()).userTable;
+    const userGenie = await dbUtil.userTable();
     let updateData;
     if (queryData.type == "basic") {
       updateData = {
@@ -62,9 +62,9 @@ const homeService = {
   },
 
   getUserData: async function (data) {
-    const userGenie = await (await dbUtil.getDBConnection()).userTable;
-    const postGenie = await (await dbUtil.getDBConnection()).postTable;
-    const friendGenie = await (await dbUtil.getDBConnection()).friendTable;
+    const userGenie = await dbUtil.userTable();
+    const postGenie = await dbUtil.postTable();
+    const friendGenie = await dbUtil.friendTable();
     try {
       const userData = await userGenie.findOne({ where: { id: data.userID } });
       const postData = await postGenie.findAll({
@@ -117,10 +117,9 @@ const homeService = {
 
   getPosts: async function (data) {
     try {
-      const friendGenie = await (await dbUtil.getDBConnection()).friendTable;
-      const likeGenie = await (await dbUtil.getDBConnection()).likeTable;
-      const shareGenie = await (await dbUtil.getDBConnection()).shareTable;
-
+      const friendGenie = await dbUtil.friendTable();
+      const likeGenie = await dbUtil.likeTable();
+      const shareGenie = await dbUtil.shareTable();
       const followerData = await friendGenie.findAll({
         where: { userID: data.userID },
       });
@@ -179,9 +178,8 @@ const homeService = {
   },
 
   getFriendList: async function (userData) {
-    const dbConnector = (await dbUtil.getDBConnection());
-    const userGenie = await dbConnector.userTable;
-    const friendGenie = await (await dbUtil.getDBConnection()).friendTable;
+    const userGenie = await dbUtil.userTable();;
+    const friendGenie = await dbUtil.friendTable();
     try {
       friendData = await friendGenie.findAll({
         where: {
@@ -224,19 +222,15 @@ const homeService = {
   },
 
   addFriend: async function (queryData) {
-    const userGenie = await (await dbUtil.getDBConnection()).userTable;
-    const friendGenie = await (await dbUtil.getDBConnection()).friendTable;
+    const userGenie = await dbUtil.userTable();
+    const friendGenie = await dbUtil.friendTable();
     try {
-      friendGenie.update(
-        {
-          friendStatus: true,
+      friendGenie.update({ friendStatus: true, }, {
+        where: {
+          userID: queryData.token.id,
+          friendID: queryData.friendID,
         },
-        {
-          where: {
-            userID: queryData.token.id,
-            friendID: queryData.friendID,
-          },
-        }
+      }
       );
       const userData = await userGenie.findOne({
         where: {
@@ -254,8 +248,8 @@ const homeService = {
   },
 
   Unfriend: async function (queryData) {
-    const userGenie = await (await dbUtil.getDBConnection()).userTable;
-    const friendGenie = await (await dbUtil.getDBConnection()).friendTable;
+    const userGenie = await dbUtil.userTable();
+    const friendGenie = await dbUtil.friendTable();
     try {
       friendGenie.update(
         {
@@ -284,7 +278,7 @@ const homeService = {
   },
 
   getUserPhotos: async function (queryData) {
-    const postGenie = await (await dbUtil.getDBConnection()).postTable;
+    const postGenie = await dbUtil.postTable();
     try {
       const postData = await postGenie.findAll({
         where: {
@@ -307,8 +301,8 @@ const homeService = {
   },
 
   getSuggetions: async function (queryData) {
-    const userGenie = await (await dbUtil.getDBConnection()).userTable;
-    const friendGenie = await (await dbUtil.getDBConnection()).friendTable;
+    const userGenie = await dbUtil.userTable();
+    const friendGenie = await dbUtil.friendTable();
     try {
       const resp = [];
       const users = await userGenie.findAll();
@@ -346,8 +340,8 @@ const homeService = {
   },
 
   likePost: async function (queryData) {
-    const likeGenie = await (await dbUtil.getDBConnection()).likeTable;
-    const postGenie = await (await dbUtil.getDBConnection()).postTable;
+    const likeGenie = await dbUtil.likeTable();
+    const postGenie = await dbUtil.postTable();
     try {
       const likeData = await likeGenie.create({
         postID: queryData.postID,
@@ -361,7 +355,7 @@ const homeService = {
       })
 
       await postGenie.update({
-        likes : (parseInt(selectedPost.likes) + 1).toString()
+        likes: (parseInt(selectedPost.likes) + 1).toString()
       }, {
         where: {
           postID: queryData.postID,
@@ -378,7 +372,7 @@ const homeService = {
   },
 
   dislikePost: async function (queryData) {
-    const likeGenie = await (await dbUtil.getDBConnection()).likeTable;
+    const likeGenie = await dbUtil.likeTable();
     try {
       const dislikeData = likeGenie.destroy({
         where: {
@@ -400,8 +394,8 @@ const homeService = {
     }
   },
   deletePost: async function (queryData) {
-    const postGenie = await (await dbUtil.getDBConnection()).postTable;
-    const likeGenie = await (await dbUtil.getDBConnection()).likeTable;
+    const postGenie = await dbUtil.postTable();
+    const likeGenie = await dbUtil.likeTable()
     try {
       const postData = await postGenie.destroy({
         where: {
@@ -431,7 +425,7 @@ const homeService = {
     }
   },
   sharePost: async function (queryData) {
-    const postGenie = await (await dbUtil.getDBConnection()).postTable;
+    const postGenie = await dbUtil.postTable();
     try {
       const postData = await postGenie.findOne({
         where: {
@@ -453,8 +447,9 @@ const homeService = {
       };
     }
   },
+
   getInternalAccess(userID, token) {
-    return parseInt(userID) === parseInt(token.id)
+    return parseInt(userID) === parseInt(token.id);
   }
 };
 module.exports = homeService;

@@ -5,12 +5,11 @@ const authService = {
     attemptLogin: async (userName, password) => {
 
         try {
-            const masterConn = await dbUtil.dbConnector();
-            const loginGenie = await masterConn.loginTable
+            const loginGenie = await dbUtil.loginTable();
             const serviceParameterData = await loginGenie.findAll({})
             let resultData = {}
             let data = {}
-            for (const user of serviceParameterData[0]) {
+            for (const user of serviceParameterData) {
                 if (user.userName === userName) {
                     if (user.password === password) {
                         resultData = { validate: true, message: `Welcome Back ${userName}`, userID: `${user.userID}` }
@@ -24,12 +23,15 @@ const authService = {
                     resultData = { validate: false, message: `No user Found with that userName` }
                 }
             }
-            const userGenie = await (await dbUtil.getDBConnection()).userTable;
-            const userData = await userGenie.findOne({
-                where: {
-                    id: data.userID
-                }
-            })
+            let userData;
+            if (data && data.userID) {
+                const userGenie = await dbUtil.userTable();
+                userData = await userGenie.findOne({
+                    where: {
+                        id: data.userID
+                    }
+                })
+            }
 
             const token = jwt.sign(userData.dataValues, process.env.ACCESS_TOKEN_SECRET_KEY)
             resultData['token'] = token;
@@ -43,8 +45,8 @@ const authService = {
         for (const key in queryData) {
             console.log(key + " : " + queryData[key])
         }
-        const userGenie = await (await dbUtil.getDBConnection()).userTable;
-        const loginGenie = await (await dbUtil.getDBConnection()).loginTable;
+        const userGenie = await dbUtil.userTable();
+        const loginGenie = await dbUtil.loginTable();
         try {
             const userData = await userGenie.create({
                 name: queryData.fullName,

@@ -12,17 +12,11 @@ const getDBInstanceByConnection = async (sequelize) => {
     const db = {};
     db.sequelize = sequelize;
     db.loginTable = require("../models/login.model")(sequelize, Sequelize);
-    await syncSequelize(sequelize);
     db.userTable = require("../models/user.model")(sequelize, Sequelize);
-    await syncSequelize(sequelize);
     db.likeTable = require("../models/like.model")(sequelize, Sequelize);
-    await syncSequelize(sequelize);
     db.postTable = require("../models/post.model")(sequelize, Sequelize);
-    await syncSequelize(sequelize);
     db.friendTable = require("../models/friend.model")(sequelize, Sequelize);
-    await syncSequelize(sequelize);
     db.shareTable = require("../models/share.model")(sequelize, Sequelize);
-    await syncSequelize(sequelize);
 
     // either use hasone or belongTO
     db.loginTable.hasOne(db.userTable, { foreignKey: 'id', as: 'userTable' }) // hasone says that forign key is in target model
@@ -35,28 +29,28 @@ const getDBInstanceByConnection = async (sequelize) => {
 
 const getDBConnection = async () => {
     try {
-        // const sequelize = new Sequelize(
-        //     config.DATABASE,
-        //     config.DATABASE_USER,
-        //     config.DATABASE_PASSWORD,
-        //     {
-        //         dialect: 'postgres',
-        //         host: config.DATABASE_HOST,
-        //         port: config.POST,
-        //         logging: false
-        //     },
-        // );
         const sequelize = new Sequelize(
-            process.env.DATABASE_URL,
+            config.DATABASE,
+            config.DATABASE_USER,
+            config.DATABASE_PASSWORD,
             {
-                dialectOptions: {
-                    ssl: {
-                        require: true,
-                        rejectUnauthorized: false // <<<<<<< YOU NEED THIS
-                    }
-                },
-            }
+                dialect: 'postgres',
+                host: config.DATABASE_HOST,
+                port: config.POST,
+                logging: false
+            },
         );
+        // const sequelize = new Sequelize(
+        //     process.env.DATABASE_URL,
+        //     {
+        //         dialectOptions: {
+        //             ssl: {
+        //                 require: true,
+        //                 rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+        //             }
+        //         },
+        //     }
+        // );
         sequelize
             .authenticate()   // simple promise that tells wheather connection true of not   
             .then(() => {
@@ -98,41 +92,35 @@ const dbConnector = async () => {
     return sequelize;
 }
 const loginTable = async () => {
-
     const sequelize = await getDBConnection();
-    const loginTable = await getDBInstanceByConnection(sequelize).loginTable;
+    const loginTable = await sequelize.loginTable
     return loginTable;
 }
 
 const userTable = async () => {
-
     const sequelize = await getDBConnection();
-    const userTable = await getDBInstanceByConnection(sequelize).userTable;
+    const userTable = await sequelize.userTable
     return userTable
 }
 
 const likeTable = async () => {
-
     const sequelize = await getDBConnection();
-    const likeTable = await getDBInstanceByConnection(sequelize).likeTable;
+    const likeTable = await sequelize.likeTable
     return likeTable
 }
 const postTable = async () => {
-
     const sequelize = await getDBConnection();
-    const postTable = await getDBInstanceByConnection(sequelize).postTable;
+    const postTable = await sequelize.postTable
     return postTable
 }
 const friendTable = async () => {
-
     const sequelize = await getDBConnection();
-    const friendTable = await getDBInstanceByConnection(sequelize)
+    const friendTable = await sequelize.friendTable
     return friendTable
 }
 const shareTable = async () => {
-
     const sequelize = await getDBConnection();
-    const shareTable = await getDBInstanceByConnection(sequelize)
+    const shareTable = await sequelize.shareTable
     return shareTable
 }
 
@@ -140,7 +128,7 @@ const shareTable = async () => {
 const syncSequelize = async (sequelize) => {
     await sequelize.sync({ alter: true })
         .then(() => {
-            console.log(`Database & tables created!`);
+            console.log(`Database & Tables created!`);
         })
         .catch(err => {
             console.error('Unable to create table and database:', err);
@@ -167,32 +155,36 @@ const seeder = async () => {
         .catch(err => {
             console.error('Unable to connect to the database:', err);
         });
-    const db = await getDBConnection();
-    const userTable = db.userTable;
+    // const db = await getDBInstanceByConnectionSeeder();
+    const userTable = require("../models/user.model")(sequelize, Sequelize);
     await syncSequelize(sequelize);
     await userSeeder.seedUserValues(userTable);
 
-    const loginTable = db.loginTable;
+    const loginTable = require("../models/login.model")(sequelize, Sequelize);
     await syncSequelize(sequelize);
     await loginSeeder.seedLoginValues(loginTable);
 
-    const likeTable = db.likeTable;
+    const likeTable = require("../models/like.model")(sequelize, Sequelize);
     await syncSequelize(sequelize);
     await likeSeeder.seedLikeValues(likeTable);
 
-    const postTable = db.postTable;
+    const postTable = require("../models/post.model")(sequelize, Sequelize);
     await syncSequelize(sequelize);
     await postSeeder.seedPostValues(postTable);
 
-    const friendTable = db.friendTable;
+    const friendTable = require("../models/friend.model")(sequelize, Sequelize);
     await syncSequelize(sequelize);
     await friendSeeder.seedFriendValues(friendTable);
 
-    const shareTable = db.shareTable;
+    const shareTable = require("../models/share.model")(sequelize, Sequelize);
     await syncSequelize(sequelize);
     await shareSeeder.seedShareValues(shareTable);
 }
 
+const deleter = async () => {
+    const connection = await dbConnector();
+    await connection.query("drop table login_Tables;drop table post_Tables;drop table user_Tables;drop table like_Tables;drop table share_Tables;drop table friend_Tables");
+}
 module.exports =
 {
     getDBConnection,
@@ -204,5 +196,5 @@ module.exports =
     friendTable,
     shareTable,
     seeder,
-
+    deleter
 }
