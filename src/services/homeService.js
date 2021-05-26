@@ -132,7 +132,7 @@ const homeService = {
       });
       let resultData = [];
       const masterConn = await dbUtil.dbConnector();
-      const posts = await masterConn.query("select p.id as id,* from post_tables as p left JOIN user_tables as u on p.userid = u.id");
+      const posts = await masterConn.query("select p.id as postID,* from post_tables as p left JOIN user_tables as u on p.userid = u.id");
       posts[0].map((post) => {
         if (friendsArray.includes(post.userid)) {
           resultData.push(post);
@@ -150,7 +150,7 @@ const homeService = {
         post['userLiked'] = (likedPosts.includes(post.id)) ? true : false
       })
 
-      
+
       shareData = await shareGenie.findAll({
         where: {
           userID: data.userID
@@ -347,12 +347,26 @@ const homeService = {
 
   likePost: async function (queryData) {
     const likeGenie = await (await dbUtil.getDBConnection()).likeTable;
+    const postGenie = await (await dbUtil.getDBConnection()).postTable;
     try {
       const likeData = await likeGenie.create({
         postID: queryData.postID,
         userID: queryData.token.id,
       });
-      //POST TABLE ME ENTRY ME +1 KRNA HAI
+
+      const selectedPost = await postGenie.findOne({
+        where: {
+          postID: queryData.postID,
+        }
+      })
+
+      await postGenie.update({
+        likes : (parseInt(selectedPost.likes) + 1).toString()
+      }, {
+        where: {
+          postID: queryData.postID,
+        }
+      });
       return { success: true, message: "The post has been liked", data: likeData };
     } catch (err) {
       return {
