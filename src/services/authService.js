@@ -6,7 +6,8 @@ const authService = {
 
         try {
             const masterConn = await dbUtil.dbConnector();
-            const serviceParameterData = await masterConn.query("select * from login_tables");
+            const loginGenie = await masterConn.loginTable
+            const serviceParameterData = await loginGenie.findAll({})
             let resultData = {}
             let data = {}
             for (const user of serviceParameterData[0]) {

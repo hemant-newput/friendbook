@@ -1,12 +1,13 @@
 const Sequelize = require('sequelize') // this is the main instance  we  use this when ever we have to use Sequelize properties like datatypes
 const config = require("../../config/config");
+require('dotenv').config()
 const loginSeeder = require('../models/seedValues/login.seed');
 const userSeeder = require('../models/seedValues/user.seed');
 const likeSeeder = require('../models/seedValues/like.seed');
 const postSeeder = require('../models/seedValues/post.seed');
 const friendSeeder = require('../models/seedValues/friend.seed');
 const shareSeeder = require('../models/seedValues/share.seed');
-const getDBInstanceByConnection = async(sequelize) => {
+const getDBInstanceByConnection = async (sequelize) => {
     const Sequelize = require("sequelize");
     const db = {};
     db.sequelize = sequelize;
@@ -24,9 +25,9 @@ const getDBInstanceByConnection = async(sequelize) => {
     await syncSequelize(sequelize);
 
     // either use hasone or belongTO
-    db.loginTable.hasOne(db.userTable,{foreignKey:'id',as:'userTable'}) // hasone says that forign key is in target model
+    db.loginTable.hasOne(db.userTable, { foreignKey: 'id', as: 'userTable' }) // hasone says that forign key is in target model
     // db.loginTable.belongsTo(db.userTable,{foreignKey:'userID',as:'userTable'}) // hasone says that forign key is in source model
-    db.postTable.belongsTo(db.userTable,{foreignKey:"userid"})
+    db.postTable.belongsTo(db.userTable, { foreignKey: "userid" })
     // db.userTable.belongsTo(db.postTable,{foreignKey:"id"})
     // db.userTable.hasMany(db.postTable,{foreignKey:"id", as:"userTable"})   
     return db
@@ -45,7 +46,17 @@ const getDBConnection = async () => {
         //         logging: false
         //     },
         // );
-        const sequelize = new Sequelize(process.env.DATABASE_URL);
+        const sequelize = new Sequelize(
+            process.env.DATABASE_URL,
+            {
+                dialectOptions: {
+                    ssl: {
+                        require: true,
+                        rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+                    }
+                },
+            }
+        );
         sequelize
             .authenticate()   // simple promise that tells wheather connection true of not   
             .then(() => {
@@ -64,7 +75,7 @@ const getDBConnection = async () => {
     }
 };
 
-const dbConnector = async()=>{
+const dbConnector = async () => {
     const sequelize = new Sequelize(
         config.DATABASE,
         config.DATABASE_USER,
@@ -84,7 +95,7 @@ const dbConnector = async()=>{
         .catch(err => {
             console.error('Unable to connect to the database:', err);
         });
-        return sequelize;
+    return sequelize;
 }
 const loginTable = async () => {
 
@@ -109,7 +120,7 @@ const likeTable = async () => {
 const postTable = async () => {
 
     const sequelize = await getDBConnection();
-    const postTable =await  getDBInstanceByConnection(sequelize).postTable;
+    const postTable = await getDBInstanceByConnection(sequelize).postTable;
     return postTable
 }
 const friendTable = async () => {
@@ -193,5 +204,5 @@ module.exports =
     friendTable,
     shareTable,
     seeder,
-    
+
 }
