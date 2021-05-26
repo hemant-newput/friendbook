@@ -147,16 +147,27 @@ const syncSequelize = async (sequelize) => {
 }
 
 const seeder = async () => {
+    // const sequelize = new Sequelize(
+    //     config.DATABASE,
+    //     config.DATABASE_USER,
+    //     config.DATABASE_PASSWORD,
+    //     {
+    //         dialect: 'postgres',
+    //         host: config.DATABASE_HOST,
+    //         port: config.POST,
+    //         logging: false
+    //     },
+    // );
     const sequelize = new Sequelize(
-        config.DATABASE,
-        config.DATABASE_USER,
-        config.DATABASE_PASSWORD,
+        process.env.DATABASE_URL,
         {
-            dialect: 'postgres',
-            host: config.DATABASE_HOST,
-            port: config.POST,
-            logging: false
-        },
+            dialectOptions: {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+                }
+            },
+        }
     );
     sequelize
         .authenticate()   // simple promise that tells wheather connection true of not   
