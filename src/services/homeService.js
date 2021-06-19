@@ -93,13 +93,13 @@ const homeService = {
         gender: userData.gender,
         dob: userData.dob,
         married: userData.martialStatus,
-        location: userData.location,
+        location: `${userData.address}`,
         occupation: userData.position,
         skills: userData.skills,
-        jobCompany: userData.jobCompany,
+        jobCompany: userData.company,
         id: userData.id,
       };
-      const internalAccess = this.getInternalAccess(data.userID, data.token)
+      const internalAccess = await this.getInternalAccess(data.userID, data.token)
       return {
         success: true,
         message: `UserData Update Successfully`,
@@ -161,7 +161,7 @@ const homeService = {
         post['userShared'] = (sharedPosts.includes(post.id)) ? true : false
       })
 
-      const internalAccess = this.getInternalAccess(data.userID, data.token)
+      const internalAccess = await this.getInternalAccess(data.userID, data.token)
       return {
         success: true,
         message: `Post fetch successful`,
@@ -187,7 +187,7 @@ const homeService = {
           friendStatus: true,
         },
       });
-      const internalAccess = this.getInternalAccess(userData.userID, userData.token)
+      const internalAccess = await this.getInternalAccess(userData.userID, userData.token)
       userData = await userGenie.findAll({});
 
       const resultData = [];
@@ -198,7 +198,7 @@ const homeService = {
               userID: user.id,
               name: user.name,
               position: user.position,
-              company: user.jobCompany,
+              company: user.company,
               image: user.profileImage,
               status: true,
             });
@@ -225,13 +225,30 @@ const homeService = {
     const userGenie = await dbUtil.userTable();
     const friendGenie = await dbUtil.friendTable();
     try {
-      friendGenie.update({ friendStatus: true, }, {
+      const friend = await friendGenie.findOne({
         where: {
           userID: queryData.token.id,
           friendID: queryData.friendID,
-        },
+        }
+      })
+      if (!friend) {
+        await friendGenie.create({
+          userID: queryData.token.id,
+          friendID: queryData.friendID,
+          friendStatus: true
+        })
       }
-      );
+      else {
+        await friendGenie.update({ friendStatus: true }, {
+          where: {
+            userID: queryData.token.id,
+            friendID: queryData.friendID,
+          },
+        }
+        );
+
+      }
+
       const userData = await userGenie.findOne({
         where: {
           id: queryData.friendID,
@@ -251,17 +268,23 @@ const homeService = {
     const userGenie = await dbUtil.userTable();
     const friendGenie = await dbUtil.friendTable();
     try {
-      friendGenie.update(
-        {
-          friendStatus: false,
-        },
-        {
+      // friendGenie.update(
+      //   {
+      //     friendStatus: false,
+      //   },
+      //   {
+      //     where: {
+      //       userID: queryData.token.id,
+      //       friendID: queryData.friendID,
+      //     },
+      //   }
+      // );
+          const temp = friendGenie.destroy({
           where: {
             userID: queryData.token.id,
             friendID: queryData.friendID,
-          },
-        }
-      );
+          }
+        });
       const userData = await userGenie.findOne({
         where: {
           id: queryData.friendID,
@@ -321,13 +344,18 @@ const homeService = {
       });
 
       const unknownPeople = usersArray.filter((x) => !friendsArray.includes(x));
-      const unknownPeopleData = await userGenie.findAll({
+      let unknownPeopleData = await userGenie.findAll({
         where: {
           id: {
             [op.in]: unknownPeople,
           },
         },
       });
+
+      unknownPeopleData = unknownPeopleData.map((people)=>{
+        people.dataValues.status = false;
+        return people
+      })
 
       return { success: true, data: unknownPeopleData };
     } catch (err) {
@@ -448,8 +476,19 @@ const homeService = {
     }
   },
 
-  getInternalAccess(userID, token) {
-    return parseInt(userID) === parseInt(token.id);
+  getInternalAccess: async (userID, token) => {
+    if (parseInt(userID) === parseInt(token.id)) {
+      return true;
+    }
+    const friendGenie = await dbUtil.friendTable();
+    const followerData = await friendGenie.findAll({
+      where: { userID: token.id },
+    });
+    const friendsArray = [parseInt(token.id)];
+    followerData.map((follower) => {
+        friendsArray.push(follower.friendID);
+    });
+    return friendsArray.includes(parseInt(userID))
   }
 };
 module.exports = homeService;

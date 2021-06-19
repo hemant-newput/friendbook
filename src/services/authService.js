@@ -1,5 +1,14 @@
 const dbUtil = require("../utils/dbUtil");
 const jwt = require('jsonwebtoken')
+const nodemailer = require('nodemailer')
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'shrivastava.hemant7415@gmail.com',
+        pass: 'hemant13245'
+    }
+});
 require('dotenv').config()
 const authService = {
     attemptLogin: async (userName, password) => {
@@ -41,6 +50,24 @@ const authService = {
         }
 
     },
+    resetPassword: async (queryData) => {
+        console.log("HELLLO")
+
+        var mailOptions = {
+            from: 'shrivastava.hemant7415@gmail.com',
+            to: queryData,
+            subject: 'Sending Email using Node.js',
+            text: 'That was easy!'
+        };
+
+        await transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.log(error);
+            } else {
+                console.log('Email sent: ' + info.response);
+            }
+        });
+    },
     signUp: async (queryData) => {
         for (const key in queryData) {
             console.log(key + " : " + queryData[key])
@@ -52,13 +79,17 @@ const authService = {
                 name: queryData.fullName,
                 email: queryData.email,
                 phone: queryData.phone,
-                position: queryData.occupation,
+                position: queryData.position,
+                company: queryData.company,
                 dob: queryData.dob,
-                address: queryData.address,
+                address: queryData.street,
+                city: queryData.city,
+                state: queryData.state,
+                country: queryData.country,
                 gender: queryData.gender,
-                location: queryData.location,
                 martialStatus: queryData.martialStatus,
                 skills: JSON.stringify(queryData.skills),
+                profileImage: queryData.profileImage
             });
             const token = jwt.sign(userData.dataValues, process.env.ACCESS_TOKEN_SECRET_KEY)
             userData['token'] = token;

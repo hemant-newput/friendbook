@@ -1,5 +1,4 @@
 const authService = require('../services/authService');
-const { postTable, dbConnector, getDBConnection } = require('../utils/dbUtil');
 const homeController = {
 
     validateLogin: async (req, res) => {
@@ -8,32 +7,32 @@ const homeController = {
         const response = await authService.attemptLogin(userName, password)
         res.send(response)
     },
+    forget: async (req, res) => {
+        const userName = req.body && req.body.userName;
+        const response = await authService.resetPassword(userName)
+        res.send(response)
+    },
     signUp: async (req, res) => {
         const queryData = {
-            fullName: req.body && req.body.fullName,
+            fullName: req.body && req.body.firstName && req.body.lastName && `${req.body.firstName} ${req.body.lastName}`,
             email: req.body && req.body.email,
-            phone: req.body && req.body.phone,
-            occupation: req.body && req.body.occupation,
-            dob: req.body && req.body.dob,
-            address: req.body && req.body.address,
+            phone: req.body && req.body.mobile,
+            company: req.body && req.body.company,
+            position: req.body.position,
+            dob: req.body && req.body.dateOfBirth,
+            street: req.body && req.body.street,
+            city: req.body && req.body.city,
+            state: req.body && req.body.state,
+            country: req.body && req.body.country,
             password: req.body && req.body.password,
             confirmPassword: req.body && req.body.confirmPassword,
-            gender: 'Male',
-            location: 'Ayodhya',
-            martialStatus: 'Unmarried',
-            skills: { skills: ['python', 'Javascript'] }
-
+            gender: req.body.gender,
+            martialStatus: req.body.martialStatus,
+            skills: req.body.skills,
+            profileImage: req.body.profileImage
         }
         const response = await authService.signUp(queryData)
         res.send(response)
-    },
-    test: async (req, res) => {
-       try {
-           const postGenie = await postTable();
-        res.send( await  postGenie.findAll({}))
-       } catch (error) {
-           console.log(error)
-       }
     },
 }
 module.exports = homeController;

@@ -11,7 +11,19 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.DataTypes.STRING,
         notNull: true
       },
+      email:{
+        type: Sequelize.DataTypes.STRING,
+        notNull: true
+      },
+      phone:{
+        type: Sequelize.DataTypes.STRING,
+        notNull: true
+      },
       position: {
+        type: Sequelize.DataTypes.STRING,
+        notNull: true
+      },
+      company:{
         type: Sequelize.DataTypes.STRING,
         notNull: true
       },
@@ -23,7 +35,19 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.DataTypes.STRING,
         notNull: true
       },
-      location: {
+      address: {
+        type: Sequelize.DataTypes.STRING,
+        notNull: true
+      },
+      city:{
+        type: Sequelize.DataTypes.STRING,
+        notNull: true
+      },
+      state:{
+        type: Sequelize.DataTypes.STRING,
+        notNull: true
+      },
+      country:{
         type: Sequelize.DataTypes.STRING,
         notNull: true
       },
@@ -35,7 +59,7 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.DataTypes.TEXT,
         notNull: true
       },
-      jobCompany: {
+      company: {
         type: Sequelize.DataTypes.STRING,
         notNull: true
       },
