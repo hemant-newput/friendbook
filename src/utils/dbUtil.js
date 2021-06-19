@@ -29,28 +29,28 @@ const getDBInstanceByConnection = async (sequelize) => {
 
 const getDBConnection = async () => {
     try {
-        const sequelize = new Sequelize(
-            config.DATABASE,
-            config.DATABASE_USER,
-            config.DATABASE_PASSWORD,
-            {
-                dialect: 'postgres',
-                host: config.DATABASE_HOST,
-                port: config.POST,
-                logging: false
-            },
-        );
         // const sequelize = new Sequelize(
-        //     process.env.DATABASE_URL,
+        //     config.DATABASE,
+        //     config.DATABASE_USER,
+        //     config.DATABASE_PASSWORD,
         //     {
-        //         dialectOptions: {
-        //             ssl: {
-        //                 require: true,
-        //                 rejectUnauthorized: false // <<<<<<< YOU NEED THIS
-        //             }
-        //         },
-        //     }
+        //         dialect: 'postgres',
+        //         host: config.DATABASE_HOST,
+        //         port: config.POST,
+        //         logging: false
+        //     },
         // );
+        const sequelize = new Sequelize(
+            process.env.DATABASE_URL,
+            {
+                dialectOptions: {
+                    ssl: {
+                        require: true,
+                        rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+                    }
+                },
+            }
+        );
         sequelize
             .authenticate()   // simple promise that tells wheather connection true of not   
             .then(() => {
@@ -70,28 +70,28 @@ const getDBConnection = async () => {
 };
 
 const dbConnector = async () => {
-    const sequelize = new Sequelize(
-        config.DATABASE,
-        config.DATABASE_USER,
-        config.DATABASE_PASSWORD,
-        {
-            dialect: 'postgres',
-            host: config.DATABASE_HOST,
-            port: config.POST,
-            logging: true
-        },
-    );
     // const sequelize = new Sequelize(
-    //     process.env.DATABASE_URL,
+    //     config.DATABASE,
+    //     config.DATABASE_USER,
+    //     config.DATABASE_PASSWORD,
     //     {
-    //         dialectOptions: {
-    //             ssl: {
-    //                 require: true,
-    //                 rejectUnauthorized: false // <<<<<<< YOU NEED THIS
-    //             }
-    //         },
-    //     }
+    //         dialect: 'postgres',
+    //         host: config.DATABASE_HOST,
+    //         port: config.POST,
+    //         logging: true
+    //     },
     // );
+    const sequelize = new Sequelize(
+        process.env.DATABASE_URL,
+        {
+            dialectOptions: {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+                }
+            },
+        }
+    );
     sequelize
         .authenticate()   // simple promise that tells wheather connection true of not   
         .then(() => {
@@ -147,28 +147,28 @@ const syncSequelize = async (sequelize) => {
 }
 
 const seeder = async () => {
-    const sequelize = new Sequelize(
-        config.DATABASE,
-        config.DATABASE_USER,
-        config.DATABASE_PASSWORD,
-        {
-            dialect: 'postgres',
-            host: config.DATABASE_HOST,
-            port: config.POST,
-            logging: false
-        },
-    );
     // const sequelize = new Sequelize(
-    //     process.env.DATABASE_URL,
+    //     config.DATABASE,
+    //     config.DATABASE_USER,
+    //     config.DATABASE_PASSWORD,
     //     {
-    //         dialectOptions: {
-    //             ssl: {
-    //                 require: true,
-    //                 rejectUnauthorized: false // <<<<<<< YOU NEED THIS
-    //             }
-    //         },
-    //     }
+    //         dialect: 'postgres',
+    //         host: config.DATABASE_HOST,
+    //         port: config.POST,
+    //         logging: false
+    //     },
     // );
+    const sequelize = new Sequelize(
+        process.env.DATABASE_URL,
+        {
+            dialectOptions: {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false // <<<<<<< YOU NEED THIS
+                }
+            },
+        }
+    );
     sequelize
         .authenticate()   // simple promise that tells wheather connection true of not   
         .then(() => {
