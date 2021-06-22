@@ -378,7 +378,7 @@ const homeService = {
 
       const selectedPost = await postGenie.findOne({
         where: {
-          postID: queryData.postID,
+          id: queryData.postID,
         }
       })
 
@@ -386,7 +386,7 @@ const homeService = {
         likes: (parseInt(selectedPost.likes) + 1).toString()
       }, {
         where: {
-          postID: queryData.postID,
+          id: queryData.postID,
         }
       });
       return { success: true, message: "The post has been liked", data: likeData };
