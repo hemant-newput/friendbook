@@ -7,6 +7,7 @@ const likeSeeder = require('../models/seedValues/like.seed');
 const postSeeder = require('../models/seedValues/post.seed');
 const friendSeeder = require('../models/seedValues/friend.seed');
 const shareSeeder = require('../models/seedValues/share.seed');
+const connPool = {};
 const getDBInstanceByConnection = async (sequelize) => {
     const Sequelize = require("sequelize");
     const db = {};
@@ -19,7 +20,7 @@ const getDBInstanceByConnection = async (sequelize) => {
     db.shareTable = require("../models/share.model")(sequelize, Sequelize);
 
     // either use hasone or belongTO
-    db.loginTable.hasOne(db.userTable, { foreignKey: 'id', sourceKey: 'userID', as: 'user' }); // hasone says that forign key is in target model
+    db.loginTable.hasOne(db.userTable, { foreignKey: 'id', sourceKey: 'userID', as: 'user' }) // hasone says that forign key is in target model
     // db.loginTable.belongsTo(db.userTable,{foreignKey:'userID',as:'userTable'}) // belongsTo says that forign key is in source model
     db.userTable.hasMany(db.postTable, { foreignKey: 'userid', sourceKey: 'id', as: "posts" });
     db.postTable.hasOne(db.userTable, { foreignKey: "id", sourceKey: "userid", as: "user" });
@@ -52,11 +53,7 @@ const getDBConnection = async () => {
                         require: true,
                         rejectUnauthorized: false // <<<<<<< YOU NEED THIS
                     }
-                },
-                pool: {
-                    idle: 10000, // milliseconds
-                    evict: 20000, // milliseconds
-                  }
+                }
             }
         );
         sequelize
@@ -98,10 +95,6 @@ const dbConnector = async () => {
                     rejectUnauthorized: false // <<<<<<< YOU NEED THIS
                 }
             },
-            pool: {
-                idle: 10000, // milliseconds
-                evict: 20000, // milliseconds
-              }
         }
     );
     sequelize
@@ -115,35 +108,59 @@ const dbConnector = async () => {
     return sequelize;
 }
 const loginTable = async () => {
+    if(connPool.loginTable) {
+        return connPool.loginTable
+    }
     const sequelize = await getDBConnection();
     const loginTable = await sequelize.loginTable
+    connPool.loginTable = loginTable
     return loginTable;
 }
 
 const userTable = async () => {
+    if(connPool.userTable) {
+        return connPool.userTable
+    }
     const sequelize = await getDBConnection();
     const userTable = await sequelize.userTable
+    connPool.userTable = userTable
     return userTable
 }
 
 const likeTable = async () => {
+    if(connPool.likeTable) {
+        return connPool.likeTable
+    }
     const sequelize = await getDBConnection();
     const likeTable = await sequelize.likeTable
+    connPool.likeTable = likeTable
     return likeTable
 }
 const postTable = async () => {
+    if(connPool.postTable) {
+        return connPool.postTable
+    }
     const sequelize = await getDBConnection();
     const postTable = await sequelize.postTable
+    connPool.postTable = postTable
     return postTable
 }
 const friendTable = async () => {
+    if(connPool.friendTable) {
+        return connPool.friendTable
+    }
     const sequelize = await getDBConnection();
     const friendTable = await sequelize.friendTable
+    connPool.friendTable = friendTable
     return friendTable
 }
 const shareTable = async () => {
+    if(connPool.shareTable) {
+        return connPool.shareTable
+    }
     const sequelize = await getDBConnection();
     const shareTable = await sequelize.shareTable
+    connPool.shareTable = shareTable
     return shareTable
 }
 
