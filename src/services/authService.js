@@ -51,22 +51,55 @@ const authService = {
 
     },
     resetPassword: async (queryData) => {
-        console.log("HELLLO")
+        const userGenie = await dbUtil.userTable();
+        const postGenie = await dbUtil.postTable();
+        const likeGenie = await dbUtil.likeTable();
+        const shareGenie = await dbUtil.shareTable();
+        const userData = await userGenie.findOne({
+            where: {
+                id: queryData
+            },
+            include: [{
+                model: postGenie,
+                as: "posts",
+                required: false,
+                where: {
+                 userid: queryData
+                },
+                include:[{
+                    model: likeGenie,
+                    as: "likes",
+                    required: false,
+                    where: {
+                     userID: queryData
+                    },  
+                },{
+                    model: shareGenie,
+                    as: "shares",
+                    required: false,
+                    where: {
+                     userID: queryData
+                    },
+                }]
+        }]
+    });
+        console.log(userData)
+        // console.log("HELLLO")
 
-        var mailOptions = {
-            from: 'shrivastava.hemant7415@gmail.com',
-            to: queryData,
-            subject: 'Sending Email using Node.js',
-            text: 'That was easy!'
-        };
+        // var mailOptions = {
+        //     from: 'shrivastava.hemant7415@gmail.com',
+        //     to: queryData,
+        //     subject: 'Sending Email using Node.js',
+        //     text: 'That was easy!'
+        // };
 
-        await transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
-        });
+        // await transporter.sendMail(mailOptions, function (error, info) {
+        //     if (error) {
+        //         console.log(error);
+        //     } else {
+        //         console.log('Email sent: ' + info.response);
+        //     }
+        // });
     },
     signUp: async (queryData) => {
         for (const key in queryData) {

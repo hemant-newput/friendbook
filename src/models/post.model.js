@@ -15,11 +15,11 @@ module.exports = (sequelize, Sequelize) => {
           type: Sequelize.DataTypes.STRING,
           notNull: true
         },
-        likes: {
+        numberOfLikes: {
           type: Sequelize.DataTypes.STRING,
           notNull: true
         },
-        shares: {
+        numberOfShares: {
           type: Sequelize.DataTypes.STRING,
           notNull: true
         },

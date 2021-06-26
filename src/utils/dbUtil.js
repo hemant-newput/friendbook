@@ -19,9 +19,13 @@ const getDBInstanceByConnection = async (sequelize) => {
     db.shareTable = require("../models/share.model")(sequelize, Sequelize);
 
     // either use hasone or belongTO
-    db.loginTable.hasOne(db.userTable, { foreignKey: 'id', as: 'userTable' }) // hasone says that forign key is in target model
-    // db.loginTable.belongsTo(db.userTable,{foreignKey:'userID',as:'userTable'}) // hasone says that forign key is in source model
-    db.postTable.belongsTo(db.userTable, { foreignKey: "userid" })
+    db.loginTable.hasOne(db.userTable, { foreignKey: 'id', sourceKey: 'userID', as: 'user' }); // hasone says that forign key is in target model
+    // db.loginTable.belongsTo(db.userTable,{foreignKey:'userID',as:'userTable'}) // belongsTo says that forign key is in source model
+    db.userTable.hasMany(db.postTable, { foreignKey: 'userid', sourceKey: 'id', as: "posts" });
+    db.postTable.hasOne(db.userTable, { foreignKey: "id", sourceKey: "userid", as: "user" });
+    db.postTable.hasMany(db.likeTable, { foreignKey: "userID", sourceKey: "userid", as: "likes" });
+    db.postTable.hasMany(db.shareTable, { foreignKey: "userID", sourceKey: "userid", as: "shares" });
+    db.userTable.hasMany(db.friendTable, { foreignKey: "userID", sourceKey: "id", as: "friends" });
     // db.userTable.belongsTo(db.postTable,{foreignKey:"id"})
     // db.userTable.hasMany(db.postTable,{foreignKey:"id", as:"userTable"})   
     return db
@@ -49,6 +53,10 @@ const getDBConnection = async () => {
                         rejectUnauthorized: false // <<<<<<< YOU NEED THIS
                     }
                 },
+                pool: {
+                    idle: 10000, // milliseconds
+                    evict: 20000, // milliseconds
+                  }
             }
         );
         sequelize
@@ -90,6 +98,10 @@ const dbConnector = async () => {
                     rejectUnauthorized: false // <<<<<<< YOU NEED THIS
                 }
             },
+            pool: {
+                idle: 10000, // milliseconds
+                evict: 20000, // milliseconds
+              }
         }
     );
     sequelize
@@ -165,8 +177,12 @@ const seeder = async () => {
                 ssl: {
                     require: true,
                     rejectUnauthorized: false // <<<<<<< YOU NEED THIS
-                }
+                },      
             },
+            pool: {
+                idle: 10000, // milliseconds
+                evict: 20000, // milliseconds
+              }
         }
     );
     sequelize

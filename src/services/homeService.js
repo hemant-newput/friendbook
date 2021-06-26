@@ -1,6 +1,7 @@
 const dbUtil = require("../utils/dbUtil");
 const jwt = require("jsonwebtoken");
 const op = require("sequelize").Op;
+const { Op } = require("sequelize");
 require("dotenv").config();
 
 const homeService = {
@@ -118,8 +119,6 @@ const homeService = {
   getPosts: async function (data) {
     try {
       const friendGenie = await dbUtil.friendTable();
-      const likeGenie = await dbUtil.likeTable();
-      const shareGenie = await dbUtil.shareTable();
       const followerData = await friendGenie.findAll({
         where: { userID: data.userID },
       });
@@ -129,38 +128,49 @@ const homeService = {
           friendsArray.push(follower.friendID);
         }
       });
-      let resultData = [];
-      const masterConn = await dbUtil.dbConnector();
-      const posts = await masterConn.query("select p.id as postID,* from post_tables as p left JOIN user_tables as u on p.userid = u.id");
-      posts[0].map((post) => {
-        if (friendsArray.includes(post.userid)) {
-          resultData.push(post);
-        }
+
+      const postGenie = await dbUtil.postTable();
+      const likeGenie = await dbUtil.likeTable();
+      const shareGenie = await dbUtil.shareTable();
+      const userGenie = await dbUtil.userTable();
+      const posts = await postGenie.findAll({
+        where: {
+          userid: {
+            [Op.in]: friendsArray
+          }
+        },
+        include: [{
+          model: likeGenie,
+          as: "likes",
+          required: false,
+        }, {
+          model: shareGenie,
+          as: "shares",
+          required: false,
+        },{
+          model: userGenie,
+          as: "user",
+          required: false,
+        }],
       });
-
-      likeData = await likeGenie.findAll({
-        where: {
-          userID: data.userID
+      const resultData = posts.map((post)=>{
+        return {
+          "postid":post.id,
+          "caption":post.caption,
+          "description":post.description,
+          "numberOfLikes": post.numberOfLikes,
+          "numberOfShares": post.numberOfShares,
+          "userid":post.userid,
+          "image_url":post.image_url,
+          "postType":post.postType,
+          "createdAt":post.createdAt,
+          "updatedAt":post.updatedAt,
+          "userLiked" :!!post.likes.filter((likeObj)=> likeObj.userID == data.userID),
+          "userShared" :!!post.likes.filter((likeObj)=> likeObj.userID == data.userID),
+          "name":post.user.name,
+          "profileImage":post.user.profileImage,
         }
       })
-      const likedPosts = likeData.map((post) => post.postID)
-      //map likes with posts
-      resultData.map((post) => {
-        post['userLiked'] = (likedPosts.includes(post.id)) ? true : false
-      })
-
-
-      shareData = await shareGenie.findAll({
-        where: {
-          userID: data.userID
-        }
-      })
-      const sharedPosts = shareData.map((post) => post.postID)
-      //map likes with posts
-      resultData.map((post) => {
-        post['userShared'] = (sharedPosts.includes(post.id)) ? true : false
-      })
-
       const internalAccess = await this.getInternalAccess(data.userID, data.token)
       return {
         success: true,
@@ -336,6 +346,7 @@ const homeService = {
       const friendData = await friendGenie.findAll({
         where: { userID: queryData.userID },
       });
+      
       const friendsArray = [parseInt(queryData.userID)];
       friendData.map((follower) => {
         if (follower.userID == queryData.userID) {
