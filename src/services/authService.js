@@ -84,7 +84,7 @@ const authService = {
             await loginGenie.update({ password: newPassword }, { where: { userName: queryData } })
             return {
                 customMessage: "Password reset Successful. Please check your Email",
-                data: userData
+                data: {}
             }
         } catch (error) {
             throw new CustomError(error, error.message || "Error while resetting password Please contact admin");

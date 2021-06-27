@@ -1,13 +1,13 @@
 const sanitizeHtml = require('sanitize-html');
 const successResponse = function (req, res, data, customMsg) {
     res.setHeader("Content-type", "application/json; charset=utf-8");
-    // sanitize the data.
-    let dataText = JSON.stringify(data.data);
+
+    let dataText = JSON.stringify(data.data || {});
     let sanitizedText = sanitizeHtml(dataText).replace('&gt;', '>').replace('&lt;', '<').replace('&amp;', '&').replace('&quot;', '"').replace('&#039;', "'");
     let sanitizedJSONData = JSON.parse(sanitizedText);
     let sanitizedCustomMsg = sanitizeHtml(data.customMessage).replace('&gt;', '>').replace('&lt;', '<').replace('&amp;', '&').replace('&quot;', '"').replace('&#039;', "'");
     let sanitizedStartTime = sanitizeHtml(req.startTime);
-    // --------
+
     const result = {
       "success": true,
       "data": sanitizedJSONData,
