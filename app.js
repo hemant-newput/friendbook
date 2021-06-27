@@ -61,6 +61,7 @@ app.use((req, res, next) => {
   console.log("method: " + req.method);
   console.log("httpVersion: " + req.httpVersion);
   console.log("url: " + req.url);
+  req.startTime = new Date().getTime();
   next();
 });
 

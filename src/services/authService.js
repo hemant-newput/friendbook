@@ -1,105 +1,94 @@
 const dbUtil = require("../utils/dbUtil");
 const jwt = require('jsonwebtoken')
 const nodemailer = require('nodemailer')
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'shrivastava.hemant7415@gmail.com',
-        pass: 'hemant13245'
-    }
-});
+const { google } = require("googleapis")
+const { v4: uuidv4 } = require('uuid');
+const CustomError = require("../utils/customError");
 require('dotenv').config()
 const authService = {
     attemptLogin: async (userName, password) => {
-
         try {
             const loginGenie = await dbUtil.loginTable();
+            const userGenie = await dbUtil.userTable();
             const serviceParameterData = await loginGenie.findAll({})
-            let resultData = {}
-            let data = {}
             for (const user of serviceParameterData) {
                 if (user.userName === userName) {
                     if (user.password === password) {
-                        resultData = { validate: true, message: `Welcome Back ${userName}`, userID: `${user.userID}` }
-                        data = user;
-                        break;
+                        const userData = await userGenie.findOne({
+                            where: { id: user.userID }
+                        })
+                        const token = jwt.sign(userData && userData.dataValues, process.env.ACCESS_TOKEN_SECRET_KEY)
+                        return {
+                            customMessage: `Welcome Back ${userName}`,
+                            data: {
+                                userID: `${user.userID}`,
+                                token: token
+                            }
+                        }
                     } else {
-                        resultData = { validate: false, message: `Wrong Password ${userName}..` }
-                        break;
+                        throw new Error(`Wrong Password ${userName}`);
                     }
                 } else {
-                    resultData = { validate: false, message: `No user Found with that userName` }
+                    throw new Error(`No user Found with that userName`);
                 }
             }
-            let userData;
-            if (data && data.userID) {
-                const userGenie = await dbUtil.userTable();
-                userData = await userGenie.findOne({
-                    where: {
-                        id: data.userID
-                    }
-                })
-            }
-
-            const token = jwt.sign(userData.dataValues, process.env.ACCESS_TOKEN_SECRET_KEY)
-            resultData['token'] = token;
-            return resultData
         } catch (error) {
-            return { success: false, message: 'Error Occured Contact Admin', data: error }
+            throw new CustomError(error, error.message || "Error while login contact admin or try resetting your password");
         }
-
     },
     resetPassword: async (queryData) => {
-        const userGenie = await dbUtil.userTable();
-        const postGenie = await dbUtil.postTable();
-        const likeGenie = await dbUtil.likeTable();
-        const shareGenie = await dbUtil.shareTable();
-        const userData = await userGenie.findOne({
-            where: {
-                id: queryData
-            },
-            include: [{
-                model: postGenie,
-                as: "posts",
-                required: false,
+        try {
+            const loginGenie = await dbUtil.loginTable();
+            const loginUser = await loginGenie.findOne({
                 where: {
-                 userid: queryData
-                },
-                include:[{
-                    model: likeGenie,
-                    as: "likes",
-                    required: false,
-                    where: {
-                     userID: queryData
-                    },  
-                },{
-                    model: shareGenie,
-                    as: "shares",
-                    required: false,
-                    where: {
-                     userID: queryData
-                    },
-                }]
-        }]
-    });
-        console.log(userData)
-        // console.log("HELLLO")
+                    userName: queryData
+                }
+            })
+            if (!loginUser) {
+                throw new Error("Invalid Username")
+            }
+            const CLIENT_ID = process.env.CLIENT_ID;
+            const CLIENT_SECRET = process.env.CLIENT_SECRET;
+            const REDIRECT_URL = process.env.REDIRECT_URL;
+            const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+            const oAuth2Client = new google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URL);
+            oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-        // var mailOptions = {
-        //     from: 'shrivastava.hemant7415@gmail.com',
-        //     to: queryData,
-        //     subject: 'Sending Email using Node.js',
-        //     text: 'That was easy!'
-        // };
+            const accessToken = await oAuth2Client.getAccessToken();
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    type: "OAUTH2",
+                    user: "hemant@newput.com",
+                    clientId: CLIENT_ID,
+                    clientSecret: CLIENT_SECRET,
+                    refreshToken: REFRESH_TOKEN,
+                    accessToken: accessToken,
+                }
+            })
+            const newPassword = uuidv4();
+            var mailOptions = {
+                from: 'shrivastava.hemant7415@gmail.com',
+                to: queryData,
+                subject: 'RESET PASSWORD',
+                text: `Its Okay It happens!! Here is your new password: ${newPassword}`
+            };
 
-        // await transporter.sendMail(mailOptions, function (error, info) {
-        //     if (error) {
-        //         console.log(error);
-        //     } else {
-        //         console.log('Email sent: ' + info.response);
-        //     }
-        // });
+            await transporter.sendMail(mailOptions, function (error, info) {
+                if (error) {
+                    console.log(error);
+                } else {
+                    console.log('Email sent: ' + info.response);
+                }
+            });
+            await loginGenie.update({ password: newPassword }, { where: { userName: queryData } })
+            return {
+                customMessage: "Password reset Successful. Please check your Email",
+                data: userData
+            }
+        } catch (error) {
+            throw new CustomError(error, error.message || "Error while resetting password Please contact admin");
+        }
     },
     signUp: async (queryData) => {
         for (const key in queryData) {
@@ -131,9 +120,12 @@ const authService = {
                 userName: queryData.email,
                 password: queryData.password
             })
-            return { success: true, message: `Congratulations SignUp Successful. Kindly Login`, data: userData }
+            return {
+                customMessage: "Congratulations SignUp Successful. Kindly Login",
+                data: userData
+            }
         } catch (err) {
-            return { success: false, message: 'Error Occured Contact Admin', data: err }
+            throw new CustomError(error, error.message || "Error while Signing Up Please contact admin ");
         }
 
     }

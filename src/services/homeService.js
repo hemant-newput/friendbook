@@ -2,6 +2,7 @@ const dbUtil = require("../utils/dbUtil");
 const jwt = require("jsonwebtoken");
 const op = require("sequelize").Op;
 const { Op } = require("sequelize");
+const CustomError = require("../utils/customError");
 require("dotenv").config();
 
 const homeService = {
@@ -18,13 +19,9 @@ const homeService = {
       });
       postData['userID'] = postData.token.id
       const remainingPosts = await this.getPosts(postData)
-      return { success: true, message: `UserData Update Successfully`, data: remainingPosts };
+      return { customMessage: `UserData Update Successfully`, data: remainingPosts };
     } catch (error) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: error,
-      };
+      throw new CustomError(error, error.message || "Error while adding Timeline Post");
     }
   },
 
@@ -52,13 +49,9 @@ const homeService = {
           id: queryData.token.id,
         },
       });
-      return { success: true, message: `UserData Update Successfully` };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+      return { customMessage: `UserData Update Successfully` };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while updating user Data");
     }
   },
 
@@ -100,19 +93,13 @@ const homeService = {
         jobCompany: userData.company,
         id: userData.id,
       };
-      const internalAccess = await this.getInternalAccess(data.userID, data.token)
+      resultData["internalAccess"] = await this.getInternalAccess(data.userID, data.token)
       return {
-        success: true,
-        message: `UserData Update Successfully`,
-        data: resultData,
-        internalAccess
+        customMessage: `UserData Update Successfully`,
+        data: resultData
       };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while fetching user data");
     }
   },
 
@@ -147,43 +134,37 @@ const homeService = {
           model: shareGenie,
           as: "shares",
           required: false,
-        },{
+        }, {
           model: userGenie,
           as: "user",
           required: false,
         }],
       });
-      const resultData = posts.map((post)=>{
+      const resultData = posts.map((post) => {
         return {
-          "postid":post.id,
-          "caption":post.caption,
-          "description":post.description,
-          "likes": post.numberOfLikes,
-          "shares": post.numberOfShares,
-          "userid":post.userid,
-          "image_url":post.image_url,
-          "postType":post.postType,
-          "createdAt":post.createdAt,
-          "updatedAt":post.updatedAt,
-          "userLiked" :!!post.likes.filter((likeObj)=> likeObj.userID == data.userID),
-          "userShared" :!!post.likes.filter((likeObj)=> likeObj.userID == data.userID),
-          "name":post.user.name,
-          "profileImage":post.user.profileImage,
+          "postid": post.id,
+          "caption": post.caption,
+          "description": post.description,
+          "numberOfLikes": post.numberOfLikes,
+          "numberOfShares": post.numberOfShares,
+          "userid": post.userid,
+          "image_url": post.image_url,
+          "postType": post.postType,
+          "createdAt": post.createdAt,
+          "updatedAt": post.updatedAt,
+          "userLiked": !!post.likes.filter((likeObj) => likeObj.userID == data.userID),
+          "userShared": !!post.likes.filter((likeObj) => likeObj.userID == data.userID),
+          "name": post.user.name,
+          "profileImage": post.user.profileImage,
         }
       })
-      const internalAccess = await this.getInternalAccess(data.userID, data.token)
+      resultData["internalAccess"] = await this.getInternalAccess(data.userID, data.token)
       return {
-        success: true,
-        message: `Post fetch successful`,
-        data: resultData,
-        internalAccess
+        customMessage: `Post fetch successful`,
+        data: resultData
       };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while fetching timeline posts");
     }
   },
 
@@ -197,12 +178,11 @@ const homeService = {
           friendStatus: true,
         },
       });
-      const internalAccess = await this.getInternalAccess(userData.userID, userData.token)
-      userData = await userGenie.findAll({});
+      const result = await userGenie.findAll({});
 
       const resultData = [];
       friendData.map((friend) => {
-        userData.map((user) => {
+        result.map((user) => {
           if (user.id === friend.friendID) {
             resultData.push({
               userID: user.id,
@@ -215,19 +195,13 @@ const homeService = {
           }
         });
       });
-
+      resultData["internalAccess"] = await this.getInternalAccess(userData.userID, userData.token)
       return {
-        success: true,
-        message: `These are your friends`,
-        data: resultData,
-        internalAccess
+        customMessage: `These are your friends`,
+        data: resultData
       };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while fetching Friends");
     }
   },
 
@@ -264,13 +238,9 @@ const homeService = {
           id: queryData.friendID,
         },
       });
-      return { success: true, message: `Started Following ${userData.name}` };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+      return { customMessage: `Started Following ${userData.name}` };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while adding friend");
     }
   },
 
@@ -278,35 +248,20 @@ const homeService = {
     const userGenie = await dbUtil.userTable();
     const friendGenie = await dbUtil.friendTable();
     try {
-      // friendGenie.update(
-      //   {
-      //     friendStatus: false,
-      //   },
-      //   {
-      //     where: {
-      //       userID: queryData.token.id,
-      //       friendID: queryData.friendID,
-      //     },
-      //   }
-      // );
-          const temp = friendGenie.destroy({
-          where: {
-            userID: queryData.token.id,
-            friendID: queryData.friendID,
-          }
-        });
+      const temp = friendGenie.destroy({
+        where: {
+          userID: queryData.token.id,
+          friendID: queryData.friendID,
+        }
+      });
       const userData = await userGenie.findOne({
         where: {
           id: queryData.friendID,
         },
       });
-      return { success: true, message: `Stopped Following ${userData.name}` };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+      return { customMessage: `Stopped Following ${userData.name}` };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while removing from friendList");
     }
   },
 
@@ -323,13 +278,9 @@ const homeService = {
         resultData.push({ image_url: post.image_url })
 
       })
-      return { success: true, data: resultData }
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+      return { data: resultData, customMessage: "User photos Loaded" }
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while getting user photos");
     }
   },
 
@@ -346,7 +297,7 @@ const homeService = {
       const friendData = await friendGenie.findAll({
         where: { userID: queryData.userID },
       });
-      
+
       const friendsArray = [parseInt(queryData.userID)];
       friendData.map((follower) => {
         if (follower.userID == queryData.userID) {
@@ -363,18 +314,14 @@ const homeService = {
         },
       });
 
-      unknownPeopleData = unknownPeopleData.map((people)=>{
+      unknownPeopleData = unknownPeopleData.map((people) => {
         people.dataValues.status = false;
         return people
       })
 
-      return { success: true, data: unknownPeopleData };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+      return { data: unknownPeopleData, customMessage: "Suggetions Loaded" };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while loading suggetions");
     }
   },
 
@@ -400,13 +347,9 @@ const homeService = {
           id: queryData.postID,
         }
       });
-      return { success: true, message: "The post has been liked", data: likeData };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+      return { customMessage: "The post has been liked", data: likeData };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while liking the post");
     }
   },
 
@@ -420,16 +363,11 @@ const homeService = {
         },
       });
       return {
-        success: true,
-        message: "The post has been disliked",
+        customMessage: "The post has been disliked",
         data: dislikeData,
       };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while disliking the post");
     }
   },
   deletePost: async function (queryData) {
@@ -451,16 +389,11 @@ const homeService = {
       queryData['userID'] = queryData.token.id
       const remainingPosts = await this.getPosts(queryData)
       return {
-        success: true,
-        message: "The post has been deleted",
+        customMessage: "The post has been deleted",
         data: remainingPosts,
       };
-    } catch (err) {
-      return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while deleting the post");
     }
   },
   sharePost: async function (queryData) {
@@ -477,13 +410,13 @@ const homeService = {
         postData.dataValues.userid = queryData.token.id
         await postGenie.create(postData.dataValues);
       }
-      return { success: true, message: "The post has been liked" };
-    } catch (err) {
       return {
-        success: false,
-        message: "Error Occured Contact Admin",
-        data: err,
-      };
+        customMessage: `The post has been liked`,
+        userID: `${user.userID}`,
+        data: postData
+      }
+    } catch (error) {
+      throw new CustomError(error, error.message || "Error while sharing the post");
     }
   },
 
@@ -497,7 +430,7 @@ const homeService = {
     });
     const friendsArray = [parseInt(token.id)];
     followerData.map((follower) => {
-        friendsArray.push(follower.friendID);
+      friendsArray.push(follower.friendID);
     });
     return friendsArray.includes(parseInt(userID))
   }
